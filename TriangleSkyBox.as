@@ -4,213 +4,449 @@
 	import flash.geom.Rectangle;
 	import flash.display.Graphics;
 	import flash.display.BitmapData;
+	import flash.geom.Vector3D;
+	import flash.display.Shape;
 	public class TriangleSkyBox {
 		//可变动天空盒子，这个类用于组织和显示天空盒 这个类只能用于TriangleView对象
-		protected var boxRaidus:Number;//天空盒的尺寸 天空盒会包围摄影机到中间
-		protected var leftMap:TriangleMaterial;
-		protected var rightMap:TriangleMaterial;
-		protected var upMap:TriangleMaterial;
-		protected var downMap:TriangleMaterial;
-		protected var frontMap:TriangleMaterial;
-		protected var backMap:TriangleMaterial;
+		public static const SKYPLANE_X:String="sky_x";
+		public static const SKYPLANE_NX:String="sky_nx";
+		public static const SKYPLANE_Y:String="sky_y";
+		public static const SKYPLANE_NY:String="sky_ny";
+		public static const SKYPLANE_Z:String="sky_z";
+		public static const SKYPLANE_NZ:String="sky_nz";
 		//
-		protected var p1:TriangleVertex;//上面定点
-		protected var p2:TriangleVertex;
-		protected var p3:TriangleVertex;
-		protected var p4:TriangleVertex;
-		protected var p5:TriangleVertex;//下面顶点Y
-		protected var p6:TriangleVertex;
-		protected var p7:TriangleVertex;
-		protected var p0:TriangleVertex;
-		protected var p8:TriangleVertex;
-		protected var p10:TriangleVertex;
-		protected var p9:TriangleVertex;
-		protected var p11:TriangleVertex;//上面定点
-		protected var p12:TriangleVertex;
-		protected var p13:TriangleVertex;
-		protected var p14:TriangleVertex;
-		protected var p15:TriangleVertex;//下面顶点Y
-		protected var p16:TriangleVertex;
-		protected var p17:TriangleVertex;
-		protected var p20:TriangleVertex;
-		
-		protected var p18:TriangleVertex;//上面定点
-		protected var p19:TriangleVertex;
-		
-		protected var p21:TriangleVertex;
-		protected var p22:TriangleVertex;//下面顶点Y
-		protected var p23:TriangleVertex;
-		
-		//
-		protected var t0:TriangleUnit;
-		protected var t1:TriangleUnit;//up
-		
-		protected var t2:TriangleUnit;
-		protected var t3:TriangleUnit;//front
-		
-		protected var t4:TriangleUnit;
-		protected var t5:TriangleUnit;//down
-		
-		protected var t6:TriangleUnit;
-		protected var t7:TriangleUnit;//back
-		
-		protected var t8:TriangleUnit;
-		protected var t9:TriangleUnit;//left
-		
-		protected var t10:TriangleUnit;
-		protected var t11:TriangleUnit;//right
-		
 
+		protected var leftPlane:TriangleSkyBoxPlane;
+		protected var rightPlane:TriangleSkyBoxPlane;
+		protected var frontPlane:TriangleSkyBoxPlane;
+		protected var backPlane:TriangleSkyBoxPlane;
+		protected var upPlane:TriangleSkyBoxPlane;
+		protected var downPlane:TriangleSkyBoxPlane;
 		
-		public function TriangleSkyBox(br:Number,left:BitmapData,right:BitmapData,up:BitmapData,down:BitmapData,front:BitmapData,back:BitmapData) {
+		protected var _vertex:Array;//所有天空盒的顶点数组
+		protected var _triangle:Array;//所有天空盒的三角形组,用于渲染
+		protected var skyCamera:TriangleCamera;
+		//
+		public function TriangleSkyBox(screenCenter:Point,left:BitmapData,right:BitmapData,up:BitmapData,down:BitmapData,front:BitmapData,back:BitmapData,step:int=3,weldEdge:Number=0.005,vof:Number=90) {
 			// constructor code
+			//screenCenter:内置的摄影机的屏幕中心，应该设置为场景摄影机的中心
+			//left-back为天空盒的6张贴图
+			//step为天空盒的分段数。数量越大天空盒越不容易出现画面空缺的问题。这个值不能小于2（等于2的时候很可能会出现画面不全的问题）设置过高则会出现性能问题
+			//weldEdge消除边界功能，默认值为0.005设置值低于这个值将可能出现边界。设置过高则会造成画面错位；
 			//
-			boxRaidus=br;
-			//
-			backMap=new TriangleMaterial(back,false,0x000000,1,true,0.25,0xFFFFFF);
-			leftMap=new TriangleMaterial(left,false,0x000000,1,true,0.25,0xFFFFFF);
-			rightMap=new TriangleMaterial(right,false,0x000000,1,true,0.25,0xFFFFFF);
-			downMap=new TriangleMaterial(down,false,0x000000,1,true,0.25,0xFFFFFF);
-			upMap=new TriangleMaterial(up,false,0x000000,1,true,0.25,0xFFFFFF);
-			frontMap=new TriangleMaterial(front,false,0x000000,1,true,0.25,0xFFFFFF);
-			backMap=new TriangleMaterial(back,false,0x000000,1,true,0.25,0xFFFFFF);
-			//下面创建6个面的定点（8个点）
-			p0=new TriangleVertex(0,0,0,0,0);
-			p1=new TriangleVertex(0,0,0,1,0);
-			p2=new TriangleVertex(0,0,0,1,1);
-			p3=new TriangleVertex(0,0,0,0,1);//用于顶面和底面 up
-			//
-			p4=new TriangleVertex(0,0,0,0,0);
-			p5=new TriangleVertex(0,0,0,1,0);
-			p6=new TriangleVertex(0,0,0,1,1);
-			p7=new TriangleVertex(0,0,0,0,1);//用于front
-			//
-			p8=new TriangleVertex(0,0,0,0,0);
-			p9=new TriangleVertex(0,0,0,1,0);
-			p10=new TriangleVertex(0,0,0,1,1);
-			p11=new TriangleVertex(0,0,0,0,1);//用于down
-			//
-			p12=new TriangleVertex(0,0,0,0,0);
-			p13=new TriangleVertex(0,0,0,1,0);
-			p14=new TriangleVertex(0,0,0,1,1);
-			p15=new TriangleVertex(0,0,0,0,1);//用于back
-			//
-			p16=new TriangleVertex(0,0,0,0,0);
-			p17=new TriangleVertex(0,0,0,1,0);
-			p18=new TriangleVertex(0,0,0,1,1);
-			p19=new TriangleVertex(0,0,0,0,1);//用于left
+			_vertex=new Array();
+			_triangle=new Array();
+			leftPlane=new TriangleSkyBoxPlane(step,SKYPLANE_NX,new TriangleMaterial(left),_vertex,_triangle,weldEdge);
+			rightPlane=new TriangleSkyBoxPlane(step,SKYPLANE_X,new TriangleMaterial(right),_vertex,_triangle,weldEdge);
+			frontPlane=new TriangleSkyBoxPlane(step,SKYPLANE_Z,new TriangleMaterial(back),_vertex,_triangle,weldEdge);
+			backPlane=new TriangleSkyBoxPlane(step,SKYPLANE_NZ,new TriangleMaterial(front),_vertex,_triangle,weldEdge);
+			upPlane=new TriangleSkyBoxPlane(step,SKYPLANE_NY,new TriangleMaterial(up),_vertex,_triangle,weldEdge);
+			downPlane=new TriangleSkyBoxPlane(step,SKYPLANE_Y,new TriangleMaterial(down),_vertex,_triangle,weldEdge);
+			//执行后将产生总的数组
+			skyCamera=new TriangleCamera(vof,screenCenter);
 			
-			//
-			p20=new TriangleVertex(0,0,0,0,0);
-			p21=new TriangleVertex(0,0,0,1,0);
-			p22=new TriangleVertex(0,0,0,1,1);
-			p23=new TriangleVertex(0,0,0,0,1);//用于right
-			//下面用这些定点组成12个三角形
-			t0=new TriangleUnit(p0,p1,p2);
-			t1=new TriangleUnit(p0,p2,p3);
-			
-			t2=new TriangleUnit(p4,p5,p6);
-			t3=new TriangleUnit(p4,p6,p7);
-			
-			t4=new TriangleUnit(p8,p9,p10);
-			t5=new TriangleUnit(p8,p10,p11);
-			
-			t6=new TriangleUnit(p12,p13,p14);
-			t7=new TriangleUnit(p12,p14,p15);
-			
-			t8=new TriangleUnit(p16,p17,p18);
-			t9=new TriangleUnit(p18,p19,p16);
-			
-			t10=new TriangleUnit(p20,p21,p22);
-			t11=new TriangleUnit(p22,p23,p20);
-			
-			t0.material=t1.material=upMap;
-			
-			t2.material=t3.material=frontMap;
-			t4.material=t5.material=downMap;
-			t6.material=t7.material=backMap;
-			t8.material=t9.material=leftMap;
-			t10.material=t11.material=rightMap;
 			
 		}
-		public function render(g:Graphics,camera:TriangleCamera){
-			var center:Point=camera.screenCenter;
-			var mat:Matrix3D=camera.ViewMatrix3D;
-			var sx:Number=camera.x-boxRaidus;
-			var sy:Number=camera.y-boxRaidus;
-			var sz:Number=camera.z-boxRaidus;
-			var ax:Number=camera.x+boxRaidus;
-			var ay:Number=camera.y+boxRaidus;
-			var az:Number=camera.z+boxRaidus;
-			//
-			p0.x=sx;
-			p0.y=sy;
-			p0.z=sz;
-			p1.x=sx;
-			p1.y=sy;
-			p1.z=ay;
-			p2.x=ax;
-			p2.y=sy;
-			p2.z=ay;
-			p3.x=ax;
-			p3.y=sy;
-			p3.z=sy;
-			//
-			p4.x=sx;
-			p4.y=sy;
-			p4.z=az;
-			p5.x=ax;
-			p5.y=sy;
-			p5.z=ay;
-			p6.x=ax;
-			p6.y=ay;
-			p6.z=ay;
-			p7.x=sx;
-			p7.y=ay;
-			p7.z=az;
-			//
+		
+		
+		public function render(g:Graphics,camera:TriangleCamera,rect:Rectangle){
+			var cx:Number=camera.x;
+			var cy:Number=camera.y;
+			var cz:Number=camera.z;
+			skyCamera.x=cx;
+			skyCamera.y=cy;
+			skyCamera.z=cz;
+			skyCamera.rotationX=camera.rotationX;
+			skyCamera.rotationY=camera.rotationY;
+			skyCamera.rotationZ=camera.rotationZ;
 			
-			p8.x=sx;
-			p8.y=ay;
-			p8.z=az;
-			p9.x=ax;
-			p9.y=ay;
-			p9.z=az;
-			p10.x=ax;
-			p10.y=ay;
-			p10.z=sy;
-			p11.x=sx;
-			p11.y=ay;
-			p11.z=sz;
+			leftPlane.updatePosition(cx,cy,cz);
+			rightPlane.updatePosition(cx,cy,cz);
+			frontPlane.updatePosition(cx,cy,cz);
+			backPlane.updatePosition(cx,cy,cz);
+			upPlane.updatePosition(cx,cy,cz);
+			downPlane.updatePosition(cx,cy,cz);
+			var i:int;
+			var len:int=_triangle.length;
+			var tmp:TriangleUnit;
+			for(i=0;i<len;i++){
+				tmp=_triangle[i];
+				tmp.ca_depth(camera);//
+				tmp.drawTrangle(g,camera.screenCenter,skyCamera.ViewMatrix3D,rect,"positive");
+			}
 			
-			//
-			t0.ca_depth(camera);
-			t1.ca_depth(camera);
-			t2.ca_depth(camera);
-			t3.ca_depth(camera);
-			t4.ca_depth(camera);
-			t5.ca_depth(camera);
-			/*t6.ca_depth(camera);
-			t7.ca_depth(camera);
-			t8.ca_depth(camera);
-			t9.ca_depth(camera);
-			t10.ca_depth(camera);
-			t11.ca_depth(camera);*/
-			//trace("skyDRAW"+p0+"  "+p1+"   "+p2+"   "+p3);
-			t0.drawTrangle(g,center,mat,null,"positive");
-			t1.drawTrangle(g,center,mat,null,"positive");
 			
-			t2.drawTrangle(g,center,mat,null,"positive");
-			t3.drawTrangle(g,center,mat,null,"positive");
-			t4.drawTrangle(g,center,mat,null,"positive");
-			t5.drawTrangle(g,center,mat,null,"positive");
-			/*t6.drawTrangle(g,center,mat,null,"positive");
-			t7.drawTrangle(g,center,mat,null,"positive");
-			t8.drawTrangle(g,center,mat,null,"positive");
-			t9.drawTrangle(g,center,mat,null,"positive");
-			t10.drawTrangle(g,center,mat,null,"positive");
-			t11.drawTrangle(g,center,mat,null,"positive");*/
 		}
 	}
 	
+}
+import flash.display.Graphics;
+class TriangleSkyBoxPlane extends TriangleMesh{
+	//可调节的天空盒面
+	protected var positionType:String;//这个值决定了天空盒平面以何种状态进行摆放
+	protected var planeWidth:Number;
+	public function TriangleSkyBoxPlane(step:int,pType:String,map:TriangleMaterial,_vertex:Array,_triangle:Array,weldEdge:Number=0.004){//width为面高度 step为面分段数
+		var vec:Array=new Array();
+		//uvclamp为消除接缝功能，值越高则接缝出现的几率越低
+		//存放的是mesh的点
+		positionType=pType;
+		planeWidth=1000;//是宽度的一半。用于计算位置
+		//接下来生成整个平面的顶点数据
+		var i:int;
+		var j:int;
+		var tmpw:Number=2000/step;
+		var len:int=step;
+		var tmpTarr:Array=new Array();//存放4点组
+		var tarr:Array=new Array();//存放生成的三角形
+		var tmparr4p:Array;//4点组缓存
+		var count:int=0;//用于确定数组上界的
+		var u:Number;
+		var v:Number;
+		
+		switch(pType){
+			case TriangleSkyBox.SKYPLANE_X://x轴向的顶点
+				for(i=0;i<=len;i++){
+					for(j=0;j<=len;j++){
+						u=j/step;
+						v=i/step;
+						if(u==1){
+							u-=weldEdge;
+						}else if(u==0){
+							u+=weldEdge;
+						}
+						if(v==1){
+							v-=weldEdge;
+						}else if(v==0){
+							v+=weldEdge;
+						}
+						if(u>1){
+							u=1;
+						}else if(u<0){
+							u=0;
+						}
+						if(v>1){
+							v=1;
+						}else if(v<0){
+							v=0;
+						}
+						vec.push(new TriangleVertex(0,-planeWidth+i*tmpw,planeWidth-j*tmpw,u,v));
+					}
+				}
+			//完成后生成三角形 并送入构造方法中
+			
+			len=vec.length;
+			//trace(len);
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					//trace("i="+i+"    i+1="+(i+1)+"     step+i+1="+(step+i+1)+"     i+step+2="+(i+step+2));
+					tmpTarr.push([vec[i],vec[i+1],vec[step+i+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			//trace("tmpTarr.length="+len);
+			
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[3],tmparr4p[1],tmparr4p[0]));
+				tarr.push(new TriangleUnit(tmparr4p[2],tmparr4p[3],tmparr4p[0]));
+			}
+			
+			break;
+			case TriangleSkyBox.SKYPLANE_NX:
+			for(i=0;i<=len;i++){
+				for(j=0;j<=len;j++){
+					u=j/step;
+					v=i/step;
+					if(u==1){
+						u-=weldEdge;
+					}else if(u==0){
+						u+=weldEdge;
+					}
+					if(v==1){
+						v-=weldEdge;
+					}else if(v==0){
+						v+=weldEdge;
+					}
+					if(u>1){
+						u=1;
+					}else if(u<0){
+						u=0;
+					}
+					if(v>1){
+						v=1;
+					}else if(v<0){
+						v=0;
+					}
+					vec.push(new TriangleVertex(0,-planeWidth+i*tmpw,-planeWidth+j*tmpw,u,v));
+				}
+			}
+			//完成后生成三角形 并送入构造方法中
+			len=vec.length;
+			//trace(len);
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					//trace("i="+i+"    i+1="+(i+1)+"     step+i+1="+(step+i+1)+"     i+step+2="+(i+step+2));
+					tmpTarr.push([vec[i],vec[i+1],vec[step+i+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			//trace("tmpTarr.length="+len);
+			
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[3],tmparr4p[1],tmparr4p[0]));
+				tarr.push(new TriangleUnit(tmparr4p[2],tmparr4p[3],tmparr4p[0]));
+			}
+			
+			break;
+			case TriangleSkyBox.SKYPLANE_Y://x轴向的顶点
+			for(i=0;i<=len;i++){
+				for(j=0;j<=len;j++){
+					u=i/step;
+					v=j/step;
+					if(u==1){
+						u-=weldEdge;
+					}else if(u==0){
+						u+=weldEdge;
+					}
+					if(v==1){
+						v-=weldEdge;
+					}else if(v==0){
+						v+=weldEdge;
+					}
+					if(u>1){
+						u=1;
+					}else if(u<0){
+						u=0;
+					}
+					if(v>1){
+						v=1;
+					}else if(v<0){
+						v=0;
+					}
+					vec.push(new TriangleVertex(-planeWidth+i*tmpw,0,planeWidth-j*tmpw,u,v));
+				}
+			}
+			//完成后生成三角形 并送入构造方法中
+			len=vec.length;
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					tmpTarr.push([vec[i],vec[i+1],vec[step+i+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+				
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[1],tmparr4p[3]));
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[3],tmparr4p[2]));
+			}
+			
+			break;
+			case TriangleSkyBox.SKYPLANE_NY:
+			for(i=0;i<=len;i++){
+				for(j=0;j<=len;j++){
+					u=i/step;
+					v=j/step;
+					if(u==1){
+						u-=weldEdge;
+					}else if(u==0){
+						u+=weldEdge;
+					}
+					if(v==1){
+						v-=weldEdge;
+					}else if(v==0){
+						v+=weldEdge;
+					}
+					if(u>1){
+						u=1;
+					}else if(u<0){
+						u=0;
+					}
+					if(v>1){
+						v=1;
+					}else if(v<0){
+						v=0;
+					}
+					vec.push(new TriangleVertex(-planeWidth+i*tmpw,0,-planeWidth+j*tmpw,u,v));
+				}
+			}
+			//完成后生成三角形 并送入构造方法中
+			len=vec.length;
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					tmpTarr.push([vec[i],vec[i+1],vec[step+i+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+				
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[1],tmparr4p[3]));
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[3],tmparr4p[2]));
+			}
+			
+			break;
+			case TriangleSkyBox.SKYPLANE_Z://x轴向的顶点
+			for(i=0;i<=len;i++){
+				for(j=0;j<=len;j++){
+					u=i/step;
+					v=j/step;
+					if(u==1){
+						u-=weldEdge;
+					}else if(u==0){
+						u+=weldEdge;
+					}
+					if(v==1){
+						v-=weldEdge;
+					}else if(v==0){
+						v+=weldEdge;
+					}
+					if(u>1){
+						u=1;
+					}else if(u<0){
+						u=0;
+					}
+					if(v>1){
+						v=1;
+					}else if(v<0){
+						v=0;
+					}
+					vec.push(new TriangleVertex(-planeWidth+i*tmpw,-planeWidth+j*tmpw,0,u,v));
+				}
+			}
+			//完成后生成三角形 并送入构造方法中
+			len=vec.length;
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					tmpTarr.push([vec[i],vec[i+1],vec[i+step+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[1],tmparr4p[3]));
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[3],tmparr4p[2]));
+			}
+			
+			break;
+			case TriangleSkyBox.SKYPLANE_NZ:
+			for(i=0;i<=len;i++){
+				for(j=0;j<=len;j++){
+					u=i/step;
+					v=j/step;
+					if(u==1){
+						u-=weldEdge;
+					}else if(u==0){
+						u+=weldEdge;
+					}
+					if(v==1){
+						v-=weldEdge;
+					}else if(v==0){
+						v+=weldEdge;
+					}
+					if(u>1){
+						u=1;
+					}else if(u<0){
+						u=0;
+					}
+					if(v>1){
+						v=1;
+					}else if(v<0){
+						v=0;
+					}
+					vec.push(new TriangleVertex(planeWidth-i*tmpw,-planeWidth+j*tmpw,0,u,v));
+				}
+			}
+			//完成后生成三角形 并送入构造方法中
+			len=vec.length;
+			count=0;
+			for(i=0;i<len;i++){
+				if(count<step && i+step+2<len){
+					tmpTarr.push([vec[i],vec[i+1],vec[i+step+1],vec[i+step+2]]);
+					count+=1;
+				}else{
+					count=0;
+				}
+			}
+			//生成组对象 下面根据组对象的顶点数据生成三角形
+			len=tmpTarr.length;
+			for(i=0;i<len;i++){
+				tmparr4p=tmpTarr[i];
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[1],tmparr4p[3]));
+				tarr.push(new TriangleUnit(tmparr4p[0],tmparr4p[3],tmparr4p[2]));
+			}
+			
+			break;
+		}
+		len=vec.length;
+		for(i=0;i<len;i++){
+			_vertex.push(vec[i]);
+		}
+		len=tarr.length;
+		for(i=0;i<len;i++){
+			_triangle.push(tarr[i]);
+		}
+		super(tarr,map);
+	}
+	public function updatePosition(cx:Number,cy:Number,cz:Number){
+		switch(positionType){
+			case TriangleSkyBox.SKYPLANE_X:
+				transform.x=cx+planeWidth;
+				transform.y=cy;
+				transform.z=cz;
+			break;
+			case TriangleSkyBox.SKYPLANE_NX:
+				transform.x=cx-planeWidth;
+				transform.y=cy;
+				transform.z=cz;
+			break;
+			case TriangleSkyBox.SKYPLANE_Y:
+				transform.x=cx;
+				transform.y=cy+planeWidth;
+				transform.z=cz;
+			break;
+			case TriangleSkyBox.SKYPLANE_NY:
+				transform.x=cx;
+				transform.y=cy-planeWidth;
+				transform.z=cz;
+			break;
+			case TriangleSkyBox.SKYPLANE_Z:
+				transform.x=cx;
+				transform.y=cy;
+				transform.z=cz+planeWidth;
+			break;
+			case TriangleSkyBox.SKYPLANE_NZ:
+				transform.x=cx;
+				transform.y=cy;
+				transform.z=cz-planeWidth;
+			break;
+			
+		}
+	}
 }

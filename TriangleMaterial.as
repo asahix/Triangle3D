@@ -11,11 +11,19 @@
 		public var lineColor:uint;
 		public var lineAlpha:Number;
 		public var thickness:Number;//线条粗细
-		public function TriangleMaterial(tex:BitmapData,cb:Boolean=false,c:uint=0x333333,calp:Number=1,lb:Boolean=false,tn:Number=0.25,cl:uint=1,lalp:Number=1) {
+		//
+		public var repeat:Boolean;
+		public var smooth:Boolean;
+		public function TriangleMaterial(tex:BitmapData=null,cb:Boolean=false,c:uint=0x333333,calp:Number=1,lb:Boolean=false,tn:Number=0.25,cl:uint=1,lalp:Number=1) {
 			// constructor code
 			texture=tex;
+			if(tex==null){
+				cb=true;//如果传入了空的贴图则默认开启颜色渲染
+			}
 			SetColor(cb,c,calp);
 			SetLine(lb,cl,lalp);
+			repeat=true;
+			smooth=false;
 		}
 		
 		public function clone():TriangleMaterial{//深拷贝材质

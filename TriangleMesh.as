@@ -6,6 +6,10 @@
 		protected var _material:TriangleMaterial;//材质
 		public var visible:Boolean;//是否绘制
 		public var transform:TriangleTransform;//模型的缩放以及旋转矩阵内核
+		public function lookAt(target:Vector3D){
+			//指向功能
+			transform.lookAt(target);
+		}
 		public function TriangleMesh(tarr:Array,mat:TriangleMaterial) {
 			// constructor code
 			geometry=tarr;

@@ -7,7 +7,11 @@
 		protected var _rotateX:Number;
 		protected var _rotateY:Number;
 		protected var _rotateZ:Number;
-		
+		protected const Y_AXIS:Vector3D=new Vector3D(0,-1,0);
+		public function lookAt(target:Vector3D){
+			//设置指向
+			_rot.pointAt(target,_direct,Y_AXIS);//Vector3D.Y_AXIS
+		}
 		public function TriangleTransform(nx:Number=0,ny:Number=0,nz:Number=0) {
 			// constructor code
 			super(nx,ny,nz);
