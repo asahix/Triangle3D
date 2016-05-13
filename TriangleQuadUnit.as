@@ -24,57 +24,20 @@
 			var cx:Number=center.x;
 			var cy:Number=center.y;
 			var tmp:Vector.<Number>=new Vector.<Number>();//投影结果
-			var tmpuv:Vector.<Number>=Vector.<Number>([_p0.u,_p0.v,1,_p1.u,_p1.v,1,_p2.u,_p2.v,1]);
-			Utils3D.projectVectors(mat,Vector.<Number>([_p0tmp.x,_p0tmp.y,_p0tmp.z,_p1tmp.x,_p1tmp.y,_p1tmp.z,_p2tmp.x,_p2tmp.y,_p2tmp.z]),tmp,tmpuv);//投影
+			var tmpuv:Vector.<Number>=Vector.<Number>([_p0.u,_p0.v,1,_p2.u,_p2.v,1,_p1.u,_p1.v,1]);
+			Utils3D.projectVectors(mat,Vector.<Number>([_p0tmp.x,_p0tmp.y,_p0tmp.z,_p2tmp.x,_p2tmp.y,_p2tmp.z,_p1tmp.x,_p1tmp.y,_p1tmp.z]),tmp,tmpuv);//投影
 			var tmp2:Vector.<Number>=new Vector.<Number>();
-			var tmpuv2:Vector.<Number>=Vector.<Number>([_p0.u,_p0.v,1,_p2.u,_p2.v,1,_p3.u,_p3.v,1]);
-			Utils3D.projectVectors(mat,Vector.<Number>([_p0tmp.x,_p0tmp.y,_p0tmp.z,_p2tmp.x,_p2tmp.y,_p2tmp.z,_p3tmp.x,_p3tmp.y,_p3tmp.z]),tmp2,tmpuv2);//投影
-			//trace(tmp);
-			if(TriangleQuad(parentMesh).ADMode){
-				//作为平行渲染
-				/*var tmpcenter:Vector.<Number>=new Vector.<Number>();
-				var tmpcuv:Vector.<Number>=Vector.<Number>([0,0,1]);
-				Utils3D.projectVectors(mat,Vector.<Number>([parentMesh.transform.x,parentMesh.transform.y,parentMesh.transform.z]),tmpcenter,tmpcuv);
-				//trace(tmpcenter);
-				
-				tmpcenter[0]+=cx;
-				tmpcenter[1]+=cy;
-				
-				var diagonal:Number=_p;//实际对角线长度
-				if(rect.contains(tmpcenter[0],tmpcenter[1])){
-					//在范围内
-					//绘制
-					if(material.lineAble){
-						g.lineStyle(material.thickness,material.lineColor,material.lineAlpha);
-					}else{
-						g.lineStyle(NaN);
-					}
-					if(material.texture!=null){
-						g.beginBitmapFill(material.texture,null,material.repeat,material.smooth);
-						g.drawTriangles(tmp,TRIANGLE_INDEX,tmpuv,culling);
-						g.endFill();
-						drawBuffer=tmp;
-						re=true;
-					}
-					if(material.colorAble){
-						g.beginFill(material.color,material.colorAlpha);
-						g.drawTriangles(tmp,null,null,culling);
-						g.endFill();
-						drawBuffer=tmp;
-						re=true;
-					}
-				}*/
-			}else{
-				drawBuffer=new Vector.<Number>();
-				
-				var re:Boolean=false;
-				if(tmpuv[2]>=0 && tmpuv[5]>=0 && tmpuv[8]>=0 && tmpuv2[2]>=0 && tmpuv2[5]>=0 && tmpuv2[8]>=0){
+			var tmpuv2:Vector.<Number>=Vector.<Number>([_p0.u,_p0.v,1,_p3.u,_p3.v,1,_p2.u,_p2.v,1]);
+			Utils3D.projectVectors(mat,Vector.<Number>([_p0tmp.x,_p0tmp.y,_p0tmp.z,_p3tmp.x,_p3tmp.y,_p3tmp.z,_p2tmp.x,_p2tmp.y,_p2tmp.z]),tmp2,tmpuv2);//投影
+			
+			//这里只绘制了两个三角形
+			drawBuffer=new Vector.<Number>();
+			var re:Boolean=false;
+			if(tmpuv[2]>=0 && tmpuv[5]>=0 && tmpuv[8]>=0 && tmpuv2[2]>=0 && tmpuv2[5]>=0 && tmpuv2[8]>=0){
 					var rx:Number=rect.x;
 					var ry:Number=rect.y;
 					var rw:Number=rect.width;
 					var rh:Number=rect.height;
-				//
-					
 					var n1x:Number=tmp[0]+cx;
 					var n1y:Number=tmp[1]+cy;
 					var n2x:Number=tmp[2]+cx;
@@ -88,6 +51,7 @@
 					tmp[4]=n3x;
 					tmp[5]=n3y;
 				//
+					
 					if(!(n1x<rx || n1y<ry ||n1x>rw ||n1y>rh) || !(n2x<rx || n2y<ry ||n2x>rw ||n2y>rh) || !(n3x<rx || n3y<ry ||n3x>rw ||n3y>rh)){
 						if(material.lineAble){
 							g.lineStyle(material.thickness,material.lineColor,material.lineAlpha);
@@ -102,6 +66,7 @@
 							re=true;
 						}
 						if(material.colorAble){
+							
 							g.beginFill(material.color,material.colorAlpha);
 							g.drawTriangles(tmp,null,null,culling);
 							g.endFill();
@@ -137,6 +102,7 @@
 						re=true;
 					}
 					if(material.colorAble){
+						//trace(material.color);
 						g.beginFill(material.color,material.colorAlpha);
 						g.drawTriangles(tmp2,null,null,culling);
 						g.endFill();
@@ -145,11 +111,10 @@
 					}
 				}
 			}
-			}
+			
 			return re;
 		}
 		override public function ca_depth(cam:TriangleCamera){
-			
 			//根据
 			_p0tmpR.x=_p0.x;
 			_p0tmpR.y=_p0.y;
@@ -168,8 +133,13 @@
 			_p3tmpR.z=_p3.z;
 			//根据
 			if(parentMesh!=null){
+				if(TriangleQuad(parentMesh).ADMode){
+					parentMesh.transform.rotationX=cam.rotationX;
+					parentMesh.transform.rotationX=cam.rotationX;
+					parentMesh.transform.rotationX=cam.rotationX;
+				//让片面指向摄影机
+				}
 				var parentPos:Vector3D=parentMesh.transform;
-				parentMesh.transform.lookAt(cam);
 				var px:Number=parentPos.x;
 				var py:Number=parentPos.y;
 				var pz:Number=parentPos.z;
@@ -211,6 +181,7 @@
 			_p3tmp.x=_p3tmpR.x;
 			_p3tmp.y=_p3tmpR.y;
 			_p3tmp.z=_p3tmpR.z;
+			
 			//先计算自身的绕转
 			//下面计算顶点与摄影机的相对位置
 			_p0tmp.x-=cam.x;
@@ -229,6 +200,7 @@
 			_p3tmp.y-=cam.y;
 			_p3tmp.z-=cam.z;
 			//
+			
 			//根据摄影机矩阵进行绕转
 			var cammat:Matrix3D=cam.transformMatrix;
 			_p0tmp=cammat.transformVector(_p0tmp);
@@ -239,7 +211,6 @@
 			//计算相对位置
 			//计算三个顶点到摄影机的距离并以最低的为三角形的绘制depth
 			depth=Vector3D.distance(cam,parentPos);//计算结果用于深度排序
-			
 		}
 		
 		override public function intersectTriangle(orig:Vector3D,dir:Vector3D):Vector3D{
@@ -254,15 +225,15 @@
 			var fInvDet:Number;
 			var re:Vector3D;
 			var intersect:Boolean=true;
-				// E1
+				
     		var E1:Vector3D = new Vector3D(v1.x - v0.x,v1.y-v0.y,v1.z-v0.z);
-     			// E2
+     			
      		var E2:Vector3D = new Vector3D(v2.x - v0.x,v2.y-v0.y,v2.z-v0.z);
-     			// P
+     			
 		    var P:Vector3D = dir.crossProduct(E2);
-				// determinant
+				
 			var det:Number = E1.dotProduct(P);
-			    // keep det > 0, modify T accordingly
+			
 	    	var T:Vector3D;
 			if( det >0 ){
          		T =new Vector3D(orig.x - v0.x,orig.y-v0.y,orig.z-v0.z);
@@ -270,27 +241,27 @@
 			    T =new Vector3D(v0.x - orig.x,v0.y-orig.y,v0.z-orig.z);
 				det = -det;
      		}
-  				// If determinant is near zero, ray lies in plane of triangle
+  				
      		if( det < 0.0001){
-         		//return null;
+        
 				intersect=false;
 			}
 			if(intersect){
-     			// Calculate u and make sure u <= 1
+     			
      			u= T.dotProduct(P);
 				if( u < 0 || u > det ){
 					intersect=false;
 				}
 				if(intersect){
-		    	 // Q
+		    	
 					 Q = T.crossProduct(E1);
-		    	 // Calculate v and make sure u + v <= 1
+		    	
 					 v = dir.dotProduct(Q);
       				if( v < 0 || u + v > det ){
           				intersect=false;
 					}
 					if(intersect){
- 		     		// Calculate t, scale parameters, ray intersects triangle
+ 		     		
  					  	t = E2.dotProduct(Q);
 						
  						fInvDet= 1 / det;
@@ -309,15 +280,14 @@
 			v0=_p0tmp;
 			v1=_p2tmp;
 			v2=_p3tmp;
-				// E1
+
     		E1 = new Vector3D(v1.x - v0.x,v1.y-v0.y,v1.z-v0.z);
-     			// E2
+
      		E2 = new Vector3D(v2.x - v0.x,v2.y-v0.y,v2.z-v0.z);
-     			// P
+
 			P = dir.crossProduct(E2);
-				// determinant
+
 			det = E1.dotProduct(P);
-			    // keep det > 0, modify T accordingly
 	    	
 			if( det >0 ){
          		T =new Vector3D(orig.x - v0.x,orig.y-v0.y,orig.z-v0.z);
@@ -325,23 +295,23 @@
 			  	T =new Vector3D(v0.x - orig.x,v0.y-orig.y,v0.z-orig.z);
 				det = -det;
      		}
-  				// If determinant is near zero, ray lies in plane of triangle
+
      		if( det < 0.0001){
          		return null;
 			}
-     			// Calculate u and make sure u <= 1
+     			
      		u = T.dotProduct(P);
 			if( u < 0 || u > det ){
          		return null;
 			}
-		    	 // Q
+		  
 			Q = T.crossProduct(E1);
-		    	 // Calculate v and make sure u + v <= 1
+		    	
 			v = dir.dotProduct(Q);
       		if( v < 0 || u + v > det ){
           		return null;
 			}
- 		     	// Calculate t, scale parameters, ray intersects triangle
+
  		    t = E2.dotProduct(Q);
  			fInvDet = 1 / det;
 			t *= fInvDet;
