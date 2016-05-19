@@ -1,5 +1,5 @@
 Triangle3D是什么？
-======
+-----
 Triangle3D是基于action script 3原生3d（cpu渲染）功能的工具库。
 
 Triangle3D能做什么？
